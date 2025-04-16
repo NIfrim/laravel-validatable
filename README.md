@@ -41,7 +41,7 @@ class Product extends Model
     use ValidatableAttributes;
 
     // Allow mass assignment on these fields.
-    protected $fillable = ['name', 'price', 'description'];
+    protected $fillable = ['name', 'price'];
 
     /**
      * Optionally determine if this model should be validated.
@@ -114,6 +114,32 @@ class Product implements Validator
             'price' => ['type' => 'number', 'label' => 'Price'],
         ];
     }
+}
+```
+
+### 3. Using the Validatable Model
+
+When you create or update a model `Product` that uses the `ValidatableAttributes` trait, the package automatically looks for a corresponding validator (e.g. `Product`) in the configured namespace and runs the validations accordingly. If the validation fails, a `ValidationException` is thrown.
+
+```php
+use App\Models\Product;
+use Illuminate\Validation\ValidationException;
+
+try {
+    // Creating a product with valid data – passes validation.
+    $product = Product::create([
+        'name'  => 'New Product',
+        'price' => 9.99,
+    ]);
+
+    // Attempting to create a product with invalid data – will throw a ValidationException.
+    $product = Product::create([
+        'name' => 'Faulty Product',
+        // 'price' is missing
+    ]);
+} catch (ValidationException $e) {
+    // Handle validation errors (e.g. display error messages).
+    dd($e->errors());
 }
 ```
 
