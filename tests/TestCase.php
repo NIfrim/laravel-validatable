@@ -1,37 +1,64 @@
 <?php
 
-namespace VendorName\Skeleton\Tests;
+namespace Nifrim\LaravelValidatable\Tests;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
+use Faker\Factory as FakerFactory;
+use Faker\Generator as FakerGenerator;
 use Orchestra\Testbench\TestCase as Orchestra;
-use VendorName\Skeleton\SkeletonServiceProvider;
+use Illuminate\Support\Facades\File;
 
-class TestCase extends Orchestra
+abstract class TestCase extends Orchestra
 {
+    protected static array $destinationData;
+    protected FakerGenerator $faker;
+
+    /**
+     * @var TTemporalConfig
+     */
+    protected static $temporalConfig;
+
+    /**
+     * @inheritDoc
+     */
+    public function defineEnvironment($app)
+    {
+        parent::defineEnvironment($app);
+        config()->set('database.default', 'testing');
+
+        // Make faker
+        $this->faker = FakerFactory::create();
+        static::$destinationData = [
+            'title' => $this->faker->name()
+        ];
+
+        // Ensure database file exists
+        $sqliteFile = __DIR__ . DIRECTORY_SEPARATOR . 'testing.sqlite';
+        if (!File::exists($sqliteFile)) {
+            touch($sqliteFile);
+        }
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'VendorName\\Skeleton\\Database\\Factories\\'.class_basename($modelName).'Factory'
-        );
+        static::migrateDirection('up');
     }
 
-    protected function getPackageProviders($app)
+    public function tearDown(): void
     {
-        return [
-            SkeletonServiceProvider::class,
-        ];
+        static::migrateDirection('down');
+        parent::tearDown();
     }
 
-    public function getEnvironmentSetUp($app)
+    /**
+     * @param up|down $direction
+     */
+    public static function migrateDirection(string $direction = 'up'): void
     {
-        config()->set('database.default', 'testing');
-
-        /*
-         foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/database/migrations') as $migration) {
-            (include $migration->getRealPath())->up();
-         }
-         */
+        foreach (File::allFiles(__DIR__ . '/Database/Migrations') as $migration) {
+            if ($migration->getExtension() === 'php') {
+                (include $migration->getRealPath())->{$direction}();
+            }
+        }
     }
 }
