@@ -16,6 +16,6 @@ class LaravelValidatableServiceProvider extends PackageServiceProvider
          */
         $package
             ->name('laravel-validatable')
-            ->hasConfigFile();
+            ->hasConfigFile(['validatable']);
     }
 }
